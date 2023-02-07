@@ -5,5 +5,6 @@ export const cryptPassword = async (pass) => {
 }
 
 export const verifyPassword = async (loginPass, DBPass) => {
+  console.log('verifying')
   return await bcrypt.compare(loginPass, DBPass)
 }

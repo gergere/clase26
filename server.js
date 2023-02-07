@@ -27,6 +27,39 @@ app.use(passport.initialize())
 app.use(passport.session())
 
 
+passport.use('login', new localStrategy(async (username, password, done) => {
+  const user = await users.findUser(username);
+  console.log(user)
+  if (!user) {
+    return done(null, false);
+  } else {
+    const passOk = await bcrypt.compare(password, user.password);
+    if (!passOk) {
+      return done(null, false);
+    } else {
+      return done(null, user);
+    }
+  }
+}))
+
+passport.serializeUser((user, done) => {
+  done(null, user.username);
+})
+
+passport.deserializeUser(async (username, done) => {
+  const user = await users.findUser(username);
+  done(null, user);
+})
+
+const isAuth = (req, res, next) => {
+  if (req.isAuthenticated()) {
+    next();
+  } else {
+    res.redirect('/login');
+  }
+}
+
+
 app.get('/', (req, res) => {
   if (session.user) {
     res.redirect('/home')
@@ -39,8 +72,17 @@ app.get('/login', (req, res) => {
   res.sendFile(__dirname + '/public/login.html')
 })
 
-app.post('/login', async (req, res) => {
+app.post('/login', passport.authenticate('login', {
+  failureRedirect: '/login-error',
+  successRedirect: '/home'
+}),
+  (req, res) => {
+    res.cookie('user', req.session.passport.user);
+    console.log('post login')
+  })
 
+app.get('/login-error', (req, res) => {
+  res.sendFile(__dirname + '/public/login-error.html');
 })
 
 app.get('/register', (req, res) => {
@@ -57,10 +99,18 @@ app.post('/register', async (req, res) => {
   }
 })
 
-app.get('/home', (req, res) => {
+app.get('/home', isAuth, (req, res) => {
   res.sendFile(__dirname + '/public/main.html')
 })
 
+app.get('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      res.json({ status: 'error', body: err });
+    }
+  })
+  res.redirect('/login');
+})
 
 
 
