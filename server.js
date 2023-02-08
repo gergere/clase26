@@ -27,9 +27,9 @@ app.use(passport.initialize())
 app.use(passport.session())
 
 
-passport.use('login', new localStrategy(async (username, password, done) => {
+passport.use('local', new localStrategy(async (username, password, done) => {
+  console.log('user: ', user)
   const user = await users.findUser(username);
-  console.log(user)
   if (!user) {
     return done(null, false);
   } else {
@@ -61,6 +61,7 @@ const isAuth = (req, res, next) => {
 
 
 app.get('/', (req, res) => {
+  console.log('session.user: ', session.user)
   if (session.user) {
     res.redirect('/home')
   } else {
@@ -72,17 +73,21 @@ app.get('/login', (req, res) => {
   res.sendFile(__dirname + '/public/login.html')
 })
 
-app.post('/login', passport.authenticate('login', {
+app.post('/login', passport.authenticate('local', {
   failureRedirect: '/login-error',
   successRedirect: '/home'
 }),
   (req, res) => {
-    res.cookie('user', req.session.passport.user);
     console.log('post login')
+    res.cookie('user', req.session.passport.user);
   })
 
 app.get('/login-error', (req, res) => {
   res.sendFile(__dirname + '/public/login-error.html');
+})
+
+app.get('/home', isAuth, (req, res) => {
+  res.sendFile(__dirname + '/public/main.html')
 })
 
 app.get('/register', (req, res) => {
@@ -99,9 +104,6 @@ app.post('/register', async (req, res) => {
   }
 })
 
-app.get('/home', isAuth, (req, res) => {
-  res.sendFile(__dirname + '/public/main.html')
-})
 
 app.get('/logout', (req, res) => {
   req.session.destroy((err) => {
