@@ -2,8 +2,7 @@ import express from 'express';
 import session from 'express-session';
 import bcrypt from 'bcrypt';
 import passport from 'passport';
-import { Strategy } from 'passport-local';
-const localStrategy = Strategy;
+import { Strategy as localStrategy } from 'passport-local';
 import mongoSession from './mongoStore.js';
 
 import path from 'path'
